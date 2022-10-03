@@ -88,6 +88,7 @@ class KBRDSystem(BaseSystem):
                 self.rec_evaluate(rec_scores, batch['item'])
             rec_loss = rec_loss.item()
             self.evaluator.optim_metrics.add("rec_loss", AverageMetric(rec_loss))
+        # conv step
         else:
             if mode != 'test':
                 gen_loss, preds = self.model.forward(batch, mode, stage)

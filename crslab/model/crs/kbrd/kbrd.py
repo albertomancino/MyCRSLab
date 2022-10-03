@@ -195,13 +195,24 @@ class KBRDModel(BaseModel):
         return self.START.detach().expand(batch_size, 1)
 
     def decode_forced(self, encoder_states, user_embedding, resp):
+        # batch size
         bsz = resp.size(0)
+        # max response length
         seqlen = resp.size(1)
+        # prepares the input
+        # inputs shape = batch size * max resp len
         inputs = resp.narrow(1, 0, seqlen - 1)
         inputs = torch.cat([self._starts(bsz), inputs], 1)
+        # decoder output
         latent, _ = self.decoder(inputs, encoder_states)
+        # part of equation (7) [Wo]: decoder output * vocabulary weights + bias #TODO: bias?
         token_logits = F.linear(latent, self.token_embedding.weight)
+
+        # equation (8)
+        # user embedding (128) ---[to 512]--> relu(user emb) ---[to vocabulary size]--> logits
         user_logits = self.user_proj_2(torch.relu(self.user_proj_1(user_embedding))).unsqueeze(1)
+        # equation (9)
+        # TODO: there is no a softmax but just a max
         sum_logits = token_logits + user_logits
         _, preds = sum_logits.max(dim=-1)
         return sum_logits, preds
@@ -287,7 +298,9 @@ class KBRDModel(BaseModel):
     def converse(self, batch, mode):
         context_tokens, context_entities, response = batch['context_tokens'], batch['context_entities'], batch[
             'response']
+        # embedding di tutte le entità del knowledge graph
         kg_embedding = self.kg_encoder(None, self.edge_idx, self.edge_type)
+        # embedding dell' utente sulla base delle entità trovate nel dialogo (bias utente)
         user_embedding = self.encode_user(context_entities, kg_embedding)
         encoder_state = self.dialog_encoder(context_tokens)
         if mode != 'test':

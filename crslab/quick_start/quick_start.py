@@ -73,3 +73,8 @@ def run_crslab(config, save_data=False, restore_data=False, save_system=False, r
         CRS.fit()
         if save_system:
             CRS.save_model()
+
+
+def print_sentence(tokens, vocab):
+    words = [vocab['ind2tok'][t] for t in tokens]
+    print(words)
