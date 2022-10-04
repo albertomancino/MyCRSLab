@@ -64,6 +64,8 @@ def run_crslab(config, save_data=False, restore_data=False, save_system=False, r
             train_dataloader[task] = get_dataloader(config, train_data, vocab[task])
             valid_dataloader[task] = get_dataloader(config, valid_data, vocab[task])
             test_dataloader[task] = get_dataloader(config, test_data, vocab[task])
+
+
     # system
     CRS = get_system(config, train_dataloader, valid_dataloader, test_dataloader, vocab, side_data, restore_system,
                      interact, debug, tensorboard)
@@ -71,6 +73,7 @@ def run_crslab(config, save_data=False, restore_data=False, save_system=False, r
         CRS.interact()
     else:
         CRS.fit()
+        # CRS.my_test()
         if save_system:
             CRS.save_model()
 

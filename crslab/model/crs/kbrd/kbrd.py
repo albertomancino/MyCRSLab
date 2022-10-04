@@ -183,6 +183,8 @@ class KBRDModel(BaseModel):
         return torch.stack(user_repr_list, dim=0)  # (bs, dim)
 
     def recommend(self, batch, mode):
+        # context entities are the entities in the text of the dialog for each element of the batch
+        # item is a single item for each element of the batch that must be recommended
         context_entities, item = batch['context_entities'], batch['item']
         kg_embedding = self.kg_encoder(None, self.edge_idx, self.edge_type)
         user_embedding = self.encode_user(context_entities, kg_embedding)
@@ -218,7 +220,7 @@ class KBRDModel(BaseModel):
         return sum_logits, preds
 
     def decode_greedy(self, encoder_states, user_embedding):
-
+        # batch size
         bsz = encoder_states[0].shape[0]
         xs = self._starts(bsz)
         incr_state = None
@@ -303,12 +305,14 @@ class KBRDModel(BaseModel):
         # embedding dell' utente sulla base delle entità trovate nel dialogo (bias utente)
         user_embedding = self.encode_user(context_entities, kg_embedding)
         encoder_state = self.dialog_encoder(context_tokens)
+
         if mode != 'test':
             self.longest_label = max(self.longest_label, response.shape[1])
             logits, preds = self.decode_forced(encoder_state, user_embedding, response)
             logits = logits.view(-1, logits.shape[-1])
             labels = response.view(-1)
             return self.conv_loss(logits, labels), preds
+
         else:
             _, preds = self.decode_greedy(encoder_state, user_embedding)
             return preds
